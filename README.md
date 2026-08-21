@@ -10,10 +10,11 @@ and a no-pressure environment for people exploring Christianity.
 
 ## Current status
 
-Phase 1 establishes the Next.js App Router workspace, route groups, design
-foundation, configuration boundaries, and documentation. Routes beyond the
-dashboard are intentionally non-functional placeholders until their designated
-phase. Supabase authentication and tenancy begin in Phase 2.
+Phase 1 established the Next.js App Router workspace, route groups, design
+foundation, configuration boundaries, and documentation. Phase 2 adds the
+reviewed relational schema, seed data, tenant-isolating RLS, private Storage
+policies, and database security tests. Supabase client and Auth integration still
+requires the packages listed below.
 
 ## Architecture
 
@@ -59,6 +60,19 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000). Empty credentials are enough
 to review the Phase 1 shell; never commit `.env.local`.
 
+### Supabase integration dependencies
+
+Install these packages before enabling the Phase 2 Auth client layer:
+
+```bash
+npm install @supabase/ssr @supabase/supabase-js zod
+```
+
+The current execution environment rejects those registry requests with HTTP 403,
+so this commit does not include an unverified lockfile edit or a substitute Auth
+implementation. Database and Storage work is independently testable with the
+Supabase CLI; see `supabase/README.md`.
+
 ## Environment variables
 
 | Variable | Exposure | Purpose |
@@ -88,6 +102,8 @@ npm run lint
 npm run typecheck
 npm run build
 git diff --check
+supabase db reset
+supabase test db
 ```
 
 ## Security principles
