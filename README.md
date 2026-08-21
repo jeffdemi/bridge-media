@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bridge Media
 
-## Getting Started
+Bridge Media is a focused social-media campaign manager for the Bridge Course at
+Valley Creek Church in Malvern, Pennsylvania. V1 supports internal planning and
+manual posting; it will not publish to Facebook or Instagram automatically.
 
-First, run the development server:
+The first campaign is **Bridge Fall 2026**, a ten-week course beginning September
+9, 2026. Messaging emphasizes free dinner, free childcare, welcome for questions,
+and a no-pressure environment for people exploring Christianity.
+
+## Current status
+
+Phase 1 established the Next.js App Router workspace, route groups, design
+foundation, configuration boundaries, and documentation. Phase 2 adds the
+reviewed relational schema, seed data, tenant-isolating RLS, private Storage
+policies, and database security tests. Supabase client and Auth integration still
+requires the packages listed below.
+
+## Architecture
+
+- **Next.js 16.3 App Router** in one deployable application.
+- **React Server Components by default.** Client Components are limited to
+  focused browser interactions.
+- **Server Actions** for authenticated application mutations. Each action must
+  validate input and independently verify authentication and authorization.
+- **Route Handlers** only for HTTP boundaries such as Auth callbacks and streamed
+  AI output.
+- **Supabase boundary:** clients, generated types, and authorization-aware data
+  access live in `lib/supabase`.
+- **AI boundary:** providers, durable writing rules, schemas, and streaming logic
+  live in `lib/ai`.
+- **PostgreSQL RLS** is the organization-isolation boundary. UI or route guards
+  are defense in depth, not substitutes for RLS.
+- **Private media:** later phases will use a private Supabase Storage bucket and
+  short-lived signed URLs after authorization.
+
+## Routes
+
+| Route | Purpose | Delivery phase |
+| --- | --- | --- |
+| `/dashboard` | Campaign overview | Foundation in Phase 1, data in Phase 7 |
+| `/campaigns` | Campaign facts and guidance | Phase 3 |
+| `/calendar` | Internal planned-post calendar | Phase 4 |
+| `/content` | Queue, variants, and assignments | Phase 3 |
+| `/media` | Private campaign media | Phase 5 |
+| `/results` | Manual cumulative results | Phase 7 |
+| `/login` | Supabase Auth entry point | Phase 2 |
+
+## Local setup
+
+Requirements: Node.js 20.9 or newer, npm, and a Supabase project for Phase 2 and
+beyond.
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Empty credentials are enough
+to review the Phase 1 shell; never commit `.env.local`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Supabase integration dependencies
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Install these packages before enabling the Phase 2 Auth client layer:
 
-## Learn More
+```bash
+npm install @supabase/ssr @supabase/supabase-js zod
+```
 
-To learn more about Next.js, take a look at the following resources:
+The current execution environment rejects those registry requests with HTTP 403,
+so this commit does not include an unverified lockfile edit or a substitute Auth
+implementation. Database and Storage work is independently testable with the
+Supabase CLI; see `supabase/README.md`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variable | Exposure | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser and server | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser and server | RLS-constrained project key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Exceptional administrative setup; never application UI |
+| `OPENAI_API_KEY` | Server only | Phase 6 drafting |
+| `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` | Server only | Stable production action encryption |
 
-## Deploy on Vercel
+## Database types
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Do not hand-maintain database row types. After applying the reviewed Phase 2
+schema, regenerate them from the local Supabase schema:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx supabase gen types typescript --local > lib/supabase/database.types.ts
+```
+
+The checked-in Phase 1 type file is an explicit non-functional marker until that
+schema exists.
+
+## Quality checks
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+git diff --check
+supabase db reset
+supabase test db
+```
+
+## Security principles
+
+- Secrets never use the `NEXT_PUBLIC_` prefix.
+- Server-only environment access stays out of Client Components.
+- Every mutation treats form and URL data as untrusted.
+- Every data operation derives identity from the verified Supabase session.
+- Tenant-owned foreign keys are checked through RLS on inserts and updates.
+- AI output is an editable suggestion requiring deliberate human review and save.
+- Bridge Media never automatically approves, schedules, or publishes content.
