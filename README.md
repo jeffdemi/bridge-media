@@ -1,50 +1,44 @@
-# Bridge Media
+# Bridge Media Hub
 
-Bridge Media is a focused social-media campaign manager for the Bridge Course at
-Valley Creek Church in Malvern, Pennsylvania. V1 supports internal planning and
-manual posting; it will not publish to Facebook or Instagram automatically.
+Bridge Media Hub is a content creation, approval, and distribution platform for promoting the Bridge Course. A small media team develops ideas into approved social assets; church members then become the distribution network through a public, mobile-first Share Center.
+
+> Idea → Develop → Draft → Review → Approved → Ready to Share → Church member shares
+
+Ideas and finished content are separate records. One idea can create a package containing only the assets the team needs. V1 never directly publishes to a social network.
 
 The first campaign is **Bridge Fall 2026**, a ten-week course beginning September
 9, 2026. Messaging emphasizes free dinner, free childcare, welcome for questions,
 and a no-pressure environment for people exploring Christianity.
 
-## Current status
-
-Phase 1 established the Next.js App Router workspace, route groups, design
-foundation, configuration boundaries, and documentation. Phase 2 adds the
-reviewed relational schema, seed data, tenant-isolating RLS, private Storage
-policies, and database security tests. Supabase client and Auth integration still
-requires the packages listed below.
+See [the implementation plan](docs/IMPLEMENTATION_PLAN.md) for the repository audit, normalized schema, route map, component structure, and phased delivery plan.
 
 ## Architecture
 
 - **Next.js 16.3 App Router** in one deployable application.
 - **React Server Components by default.** Client Components are limited to
   focused browser interactions.
-- **Server Actions** for authenticated application mutations. Each action must
-  validate input and independently verify authentication and authorization.
+- **Server Actions** for validated authenticated mutations.
 - **Route Handlers** only for HTTP boundaries such as Auth callbacks and streamed
   AI output.
 - **Supabase boundary:** clients, generated types, and authorization-aware data
   access live in `lib/supabase`.
 - **AI boundary:** providers, durable writing rules, schemas, and streaming logic
   live in `lib/ai`.
-- **PostgreSQL RLS** is the organization-isolation boundary. UI or route guards
-  are defense in depth, not substitutes for RLS.
-- **Private media:** later phases will use a private Supabase Storage bucket and
-  short-lived signed URLs after authorization.
+- **PostgreSQL RLS** is the authorization boundary; route guards are defense in depth.
+- **Supabase Storage** holds media binaries while PostgreSQL stores metadata.
 
 ## Routes
 
 | Route | Purpose | Delivery phase |
 | --- | --- | --- |
-| `/dashboard` | Campaign overview | Foundation in Phase 1, data in Phase 7 |
-| `/campaigns` | Campaign facts and guidance | Phase 3 |
-| `/calendar` | Internal planned-post calendar | Phase 4 |
-| `/content` | Queue, variants, and assignments | Phase 3 |
-| `/media` | Private campaign media | Phase 5 |
-| `/results` | Manual cumulative results | Phase 7 |
-| `/login` | Supabase Auth entry point | Phase 2 |
+| `/`, `/share` | Public Ready-to-Share content |
+| `/dashboard` | Workshop overview and quick actions |
+| `/ideas` | Idea Bank and development |
+| `/content` | Packages and content items |
+| `/review` | Review and approval queue |
+| `/campaigns` | Campaign facts and themes |
+| `/media` | Images, video, and thumbnails |
+| `/login` | Supabase Auth entry point |
 
 ## Local setup
 
@@ -57,21 +51,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Empty credentials are enough
-to review the Phase 1 shell; never commit `.env.local`.
-
-### Supabase integration dependencies
-
-Install these packages before enabling the Phase 2 Auth client layer:
-
-```bash
-npm install @supabase/ssr @supabase/supabase-js zod
-```
-
-The current execution environment rejects those registry requests with HTTP 403,
-so this commit does not include an unverified lockfile edit or a substitute Auth
-implementation. Database and Storage work is independently testable with the
-Supabase CLI; see `supabase/README.md`.
+Open [http://localhost:3000](http://localhost:3000). Never commit `.env.local`.
 
 ## Environment variables
 
@@ -79,14 +59,12 @@ Supabase CLI; see `supabase/README.md`.
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser and server | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser and server | RLS-constrained project key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server only | Exceptional administrative setup; never application UI |
-| `OPENAI_API_KEY` | Server only | Phase 6 drafting |
+| `OPENAI_API_KEY` | Server only | editable AI drafting |
 | `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` | Server only | Stable production action encryption |
 
 ## Database types
 
-Do not hand-maintain database row types. After applying the reviewed Phase 2
-schema, regenerate them from the local Supabase schema:
+Regenerate database types after applying migrations:
 
 ```bash
 npx supabase gen types typescript --local > lib/supabase/database.types.ts
@@ -113,5 +91,6 @@ supabase test db
 - Every mutation treats form and URL data as untrusted.
 - Every data operation derives identity from the verified Supabase session.
 - Tenant-owned foreign keys are checked through RLS on inserts and updates.
-- AI output is an editable suggestion requiring deliberate human review and save.
-- Bridge Media never automatically approves, schedules, or publishes content.
+- AI output is editable and requires deliberate human review.
+- Share events measure button use, not successful social posts.
+- Bridge Media never automatically approves or publishes content.
