@@ -3,11 +3,12 @@ import type { ReactNode } from "react";
 
 const navigation = [
   ["Dashboard", "/dashboard"],
-  ["Campaigns", "/campaigns"],
-  ["Calendar", "/calendar"],
+  ["Ideas", "/ideas"],
   ["Content", "/content"],
+  ["Review", "/review"],
+  ["Campaigns", "/campaigns"],
   ["Media", "/media"],
-  ["Results", "/results"],
+  ["Share Center", "/"],
 ] as const;
 
 export function WorkspaceShell({ children }: { children: ReactNode }) {
@@ -21,8 +22,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <p className="mt-auto rounded-xl bg-brand-soft p-4 text-sm leading-6 text-brand-strong">
-          Scheduling is for team planning only. Bridge Media never publishes
-          automatically.
+          Create with care. Nothing reaches the Share Center until an approver marks it Ready to Share.
         </p>
       </aside>
 

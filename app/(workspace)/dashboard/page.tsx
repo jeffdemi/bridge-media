@@ -3,10 +3,10 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Dashboard" };
 
 const cards = [
-  ["Ideas", "0"],
-  ["Drafts", "0"],
-  ["Ready", "0"],
-  ["Scheduled", "0"],
+  ["Ideas", "12"],
+  ["Developing", "4"],
+  ["In review", "3"],
+  ["Ready to share", "8"],
 ] as const;
 
 export default function DashboardPage() {
@@ -15,11 +15,10 @@ export default function DashboardPage() {
       <header>
         <p className="text-sm font-semibold text-brand">Bridge Fall 2026</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Campaign dashboard
+          Workshop dashboard
         </h1>
         <p className="mt-3 max-w-2xl leading-7 text-muted">
-          Plan welcoming, conversational invitations for people exploring
-          Christianity in and around Malvern.
+          Move the strongest ideas toward useful media people can confidently share.
         </p>
       </header>
 
@@ -38,8 +37,8 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <PlaceholderCard title="Upcoming content" />
-        <PlaceholderCard title="Recent results" />
+        <QuickActions />
+        <PlaceholderCard title="Needs attention" />
       </section>
     </div>
   );
@@ -50,8 +49,13 @@ function PlaceholderCard({ title }: { title: string }) {
     <article className="min-h-56 rounded-2xl border bg-surface p-6">
       <h2 className="font-semibold">{title}</h2>
       <div className="mt-8 rounded-xl bg-surface-muted px-4 py-8 text-center text-sm text-muted">
-        Campaign data will appear here after Phase 2 setup.
+        “Why does God allow suffering?” is waiting for review. Two drafts have no owner.
       </div>
     </article>
   );
+}
+
+function QuickActions() {
+  const actions = [["New idea", "/ideas/new"], ["Develop idea", "/ideas"], ["Upload media", "/media"], ["Review content", "/review"], ["Open Share Center", "/"]] as const;
+  return <article className="rounded-2xl border bg-surface p-6"><h2 className="font-semibold">Quick actions</h2><div className="mt-5 grid grid-cols-2 gap-3">{actions.map(([label, href]) => <a key={href + label} href={href} className="rounded-xl border bg-white px-4 py-3 text-sm font-semibold hover:bg-surface-muted">{label}</a>)}</div></article>;
 }

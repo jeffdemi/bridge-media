@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -11,15 +10,9 @@ export default function LoginPage() {
       </p>
       <h1 className="text-3xl font-semibold tracking-tight">Welcome back</h1>
       <p className="mt-3 leading-7 text-muted">
-        Supabase sign-in will be enabled in Phase 2. The workspace foundation is
-        available now for review.
+        Sign in to contribute ideas, develop content, and move approved assets into the Share Center.
       </p>
-      <Link
-        href="/dashboard"
-        className="mt-8 inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-5 font-semibold text-white transition hover:bg-brand-strong"
-      >
-        Preview workspace
-      </Link>
+      <form className="mt-7 space-y-4"><label className="block"><span className="mb-2 block text-sm font-semibold">Email</span><input className="field" type="email" autoComplete="email" /></label><label className="block"><span className="mb-2 block text-sm font-semibold">Password</span><input className="field" type="password" autoComplete="current-password" /></label><button type="button" className="min-h-11 w-full rounded-xl bg-brand px-5 font-semibold text-white">Sign in</button></form>
     </section>
   );
 }
