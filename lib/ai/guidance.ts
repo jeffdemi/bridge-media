@@ -5,4 +5,6 @@ export const BRIDGE_WRITING_GUIDANCE = [
   "Do not assume the reader already believes Christianity.",
   "Remain consistent with historic evangelical Christianity.",
   "Prefer authentic testimony and personal invitation over marketing language.",
+  "Do not sound like corporate advertising or manipulate the reader.",
+  "Do not water down Christian claims merely to make them more appealing.",
 ] as const;
