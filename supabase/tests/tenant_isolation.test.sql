@@ -25,8 +25,19 @@ insert into public.content_platforms (id, content_item_id, platform_id, copy) va
   ('a4000000-0000-4000-8000-000000000002', 'a3000000-0000-4000-8000-000000000002', 99, 'Copy B');
 
 set local role anon;
-select is_empty('select id from public.organizations', 'anonymous users cannot read organizations');
-select is_empty('select id from public.campaigns', 'anonymous users cannot read campaigns');
+select throws_ok(
+  'select id from public.organizations',
+  '42501',
+  'permission denied for table organizations',
+  'anonymous users cannot read organizations'
+);
+
+select throws_ok(
+  'select id from public.campaigns',
+  '42501',
+  'permission denied for table campaigns',
+  'anonymous users cannot read campaigns'
+);
 select throws_ok($$insert into public.campaigns (organization_id, name, location, starts_on, message) values ('a1000000-0000-4000-8000-000000000001', 'Bad', 'Bad', current_date, 'Bad')$$, '42501', null, 'anonymous users cannot create campaigns');
 select is_empty($$select id from storage.objects where bucket_id = 'campaign-media'$$, 'anonymous users cannot read private media');
 reset role;
