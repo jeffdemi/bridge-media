@@ -53,6 +53,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). Never commit `.env.local`.
 
+## Claude Code
+
+To work on this repository with [Claude Code](https://claude.ai/code):
+
+```bash
+npm install -g @anthropic-ai/claude-code
+cd ~/path/to/bridge-media
+claude
+```
+
+Claude Code reads `AGENTS.md` for project-specific conventions before writing
+any code.
+
 ## Environment variables
 
 | Variable | Exposure | Purpose |
