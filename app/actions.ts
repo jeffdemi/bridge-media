@@ -1,6 +1,7 @@
 "use server";
 
 import { Output, generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -53,10 +54,15 @@ export async function developIdea(ideaId: string) {
   if (error) throw new Error(error.message);
   const campaign = Array.isArray(idea.campaigns) ? idea.campaigns[0] : idea.campaigns;
   if (!campaign) throw new Error("The idea campaign could not be loaded.");
-  await supabase.from("ideas").update({ status: "developing" }).eq("id", ideaId);
-  const { output } = await generateText({ model: "openai/gpt-5.6-terra", output: Output.object({ schema: developmentSchema }), instructions: `You help a church media team develop editable social content. ${BRIDGE_WRITING_GUIDANCE.join(" ")} Never claim content is approved or published.`, prompt: `Campaign: ${campaign.name}. Message: ${campaign.message}. Details: ${campaign.selling_points.join(", ")}. Guidance: ${campaign.ai_guidance}. Idea: ${idea.title}. Description: ${idea.description}` });
+  const rollbackStatus = idea.status === "developing" ? "idea" : idea.status;
+  let packageId: string | null = null;
+  try {
+  const { error: developingError } = await supabase.from("ideas").update({ status: "developing" }).eq("id", ideaId);
+  if (developingError) throw new Error(developingError.message);
+  const { output } = await generateText({ model: openai("gpt-5.6"), output: Output.object({ schema: developmentSchema }), instructions: `You help a church media team develop editable social content. ${BRIDGE_WRITING_GUIDANCE.join(" ")} Never claim content is approved or published.`, prompt: `Campaign: ${campaign.name}. Message: ${campaign.message}. Details: ${campaign.selling_points.join(", ")}. Guidance: ${campaign.ai_guidance}. Idea: ${idea.title}. Description: ${idea.description}` });
   const { data: packageRow, error: packageError } = await supabase.from("content_packages").insert({ idea_id: ideaId, title: output.headline, description: output.hook, created_by: user.id }).select("id").single();
   if (packageError) throw new Error(packageError.message);
+  packageId = packageRow.id;
   const types = [
     { key: "text", title: "Facebook post", body: output.facebookPost, caption: output.facebookPost },
     { key: "text", title: "Instagram caption", body: output.instagramCaption, caption: output.instagramCaption },
@@ -75,10 +81,26 @@ export async function developIdea(ideaId: string) {
     const { error: platformError } = await supabase.from("content_platforms").insert(items.flatMap((item) => platforms.map((platformId) => ({ content_item_id: item.id, platform_id: platformId }))));
     if (platformError) throw new Error(platformError.message);
   }
-  await supabase.from("ideas").update({ status: "draft" }).eq("id", ideaId);
-  await supabase.from("status_history").insert([{ idea_id: ideaId, from_status: idea.status, to_status: "developing", changed_by: user.id }, { idea_id: ideaId, from_status: "developing", to_status: "draft", changed_by: user.id }]);
+  const { error: draftError } = await supabase.from("ideas").update({ status: "draft" }).eq("id", ideaId);
+  if (draftError) throw new Error(draftError.message);
+  const history = idea.status === "developing" ? [{ idea_id: ideaId, from_status: "developing" as const, to_status: "draft" as const, changed_by: user.id }] : [{ idea_id: ideaId, from_status: idea.status, to_status: "developing" as const, changed_by: user.id }, { idea_id: ideaId, from_status: "developing" as const, to_status: "draft" as const, changed_by: user.id }];
+  const { error: historyError } = await supabase.from("status_history").insert(history);
+  if (historyError) throw new Error(historyError.message);
   revalidatePath("/ideas"); revalidatePath("/content");
-  return { packageId: packageRow.id };
+  return { ok: true as const, packageId: packageRow.id };
+  } catch (error) {
+    console.error("[developIdea] generation failed", { ideaId, error });
+    if (packageId) await supabase.from("content_packages").delete().eq("id", packageId);
+    await supabase.from("ideas").update({ status: rollbackStatus }).eq("id", ideaId);
+    revalidatePath("/ideas"); revalidatePath(`/ideas/${ideaId}`);
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    const userMessage = message.includes("api key") || message.includes("authentication") || message.includes("401")
+      ? "OpenAI authentication failed. Ask an administrator to check the OpenAI API key."
+      : message.includes("quota") || message.includes("billing") || message.includes("429")
+        ? "OpenAI billing or usage limits blocked this request. Ask an administrator to check the OpenAI account."
+        : "OpenAI could not develop this idea. Please try again.";
+    return { ok: false as const, error: userMessage };
+  }
 }
 
 export async function saveContent(id: string, input: z.input<typeof contentSchema>) {
