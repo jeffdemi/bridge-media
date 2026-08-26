@@ -18,7 +18,6 @@ export function ShareActions({ id, title, caption }: { id: string; title: string
     <div className="grid grid-cols-2 gap-2 sm:flex">
       <button onClick={copy} className="min-h-11 rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-strong">{copied ? "Copied!" : "Copy caption"}</button>
       <button onClick={share} className="min-h-11 rounded-xl border bg-white px-4 text-sm font-semibold hover:bg-surface-muted">Share</button>
-      <button onClick={() => void track(id, "media_download")} className="col-span-2 min-h-11 rounded-xl border bg-white px-4 text-sm font-semibold hover:bg-surface-muted">Download media</button>
     </div>
   );
 }
